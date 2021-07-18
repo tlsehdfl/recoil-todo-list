@@ -205,13 +205,13 @@ const Calendar: React.FC = () => {
     ));
   }
 
-  const removeTodo = (todo: Todo) => {
-    const nextTodoList = todoList[todo.date].filter(t => t.id !== todo.id);
-
-    setTodoList({...todoList, [todo.date]: nextTodoList})
-  }
-
   useEffect(() => {
+    const removeTodo = (todo: Todo) => {
+      const nextTodoList = todoList[todo.date].filter(t => t.id !== todo.id);
+
+      setTodoList({...todoList, [todo.date]: nextTodoList})
+    }
+
     const onBackspaceKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Backspace') {
         selectedTodo && removeTodo(selectedTodo);
