@@ -145,10 +145,6 @@ const Calendar: React.FC = () => {
     return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
   }
 
-  const isHoliday = (d: Date) => {
-    return [0, 6].includes(d.getDay());
-  };
-
   const handleGoTo = (d: Date) => {
     setSelectedDate(d);
   }
@@ -223,7 +219,7 @@ const Calendar: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', onBackspaceKeyDown);
     }
-  }, [selectedTodo]);
+  }, [selectedTodo, todoList, setTodoList]);
 
   return (
     <Base>
