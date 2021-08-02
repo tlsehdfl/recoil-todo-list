@@ -25,8 +25,10 @@ const App: React.FC = () => (
   <RecoilRoot>
     <Global styles={globalStyle} />
     <Container>
+      {/** Calendar */}
       <Calendar />
     </Container>
+    {/** Modal */}
     <TodoFormModal />
     <TodoStatisticsModal />
   </RecoilRoot>

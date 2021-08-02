@@ -2,7 +2,7 @@ import React from 'react';
 import styled from '@emotion/styled/macro';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 
-import { Todo, selectedTodoState, selectedDateState } from './atom';
+import { Todo, selectedTodoState } from './atom';
 import { todoStatisticsModalOpenState } from "../TodoStatisticsModal/atom";
 
 const EtcItem = styled.li`
@@ -42,15 +42,13 @@ const Base = styled.ul`
 
 interface Props {
   items: Array<Todo>;
-  date: Date;
 }
 
 const MAX_TODO_LIST_LENGTH = 3;
 
-const TodoList: React.FC<Props> = ({ items, date }) => {
+const TodoList: React.FC<Props> = ({ items }) => {
   const selectedTodo = useRecoilValue(selectedTodoState);
 
-  const setSelectedDate = useSetRecoilState(selectedDateState);
   const setSelectedTodo = useSetRecoilState(selectedTodoState);
   const setTodoStatisticsModalOpen = useSetRecoilState(todoStatisticsModalOpenState);
 
@@ -63,7 +61,6 @@ const TodoList: React.FC<Props> = ({ items, date }) => {
   const handleTodoStatisticsModalOpen = (event: React.SyntheticEvent<HTMLLIElement>) => {
     event.stopPropagation();
 
-    setSelectedDate(date);
     setTodoStatisticsModalOpen(true);
   }
 

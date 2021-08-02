@@ -1,39 +1,36 @@
-import { atom, selector } from 'recoil';
-
-import { getSimpleDateFormat } from '../../utils/date';
+import { atom, atomFamily, selectorFamily } from 'recoil';
+import { isSameDay } from '../../utils/date';
 
 export interface Todo {
-  id: number;
-  done: boolean;
+  id: string;
   content: string;
-  date: string;
+  done: boolean;
+  date: Date;
 }
 
-export interface TodoList {
-  [date: string]: Array<Todo>;
-}
-
-export const todoListState = atom<TodoList>({
+export const todoListState = atom<Array<Todo>>({
   key: 'todoListState',
-  default: {}
+  default: [],
 });
 
 export const selectedDateState = atom<Date>({
   key: 'selectedDateState',
-  default: new Date()
+  default: new Date(),
 });
 
 export const selectedTodoState = atom<Todo | null>({
   key: 'selectedTodoState',
-  default: null
+  default: null,
 });
 
-export const filteredTodoListState = selector({
+export const filteredTodoListState = atomFamily<Array<Todo>, Date>({
   key: 'filteredTodoListState',
-  get: ({ get }) => {
-    const selectedDate = get(selectedDateState);
-    const todoList = get(todoListState);
+  default: selectorFamily({
+    key: 'filteredTodoListState/default',
+    get: (selectedDate) => ({ get }) => {
+      const todoList = get(todoListState);
 
-    return todoList[getSimpleDateFormat(selectedDate)];
-  }
-});
+      return todoList.filter(todo => isSameDay(todo.date, selectedDate));
+    }
+  })
+})

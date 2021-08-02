@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import styled from '@emotion/styled/macro';
-import { useRecoilValue, useSetRecoilState } from 'recoil'
+import { useRecoilCallback, useRecoilState, useRecoilValue } from 'recoil'
+import { v4 as uuidv4} from 'uuid';
 
 import { todoFormModalOpenState } from './atom';
 import Modal from '../../components/Modal';
@@ -48,26 +49,28 @@ const TodoFormModal: React.FC = () => {
   const [todo, setTodo] = useState<string>('');
 
   const selectedDate = useRecoilValue(selectedDateState);
-  const isOpen = useRecoilValue(todoFormModalOpenState);
   const todoList = useRecoilValue(todoListState);
 
-  const setTodoModalOpen = useSetRecoilState(todoFormModalOpenState);
-  const setTodoList = useSetRecoilState(todoListState);
+  const [isOpen, setIsOpen] = useRecoilState(todoFormModalOpenState);
 
   const reset = () => {
     setTodo('');
     inputRef.current?.focus();
   }
 
-  const handleClose = () => setTodoModalOpen(false);
+  const handleClose = () => setIsOpen(false);
+
+  const addTodo = useRecoilCallback(({ snapshot, set }) => () => {
+    const todoList = snapshot.getLoadable(todoListState).getValue();
+
+    const newTodo = { id: uuidv4(), content: todo, done: false, date: selectedDate };
+
+    set(todoListState, [...todoList, newTodo]);
+  }, [todo, selectedDate, todoList]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      const prevTodoList = todoList[getSimpleDateFormat(selectedDate)];
-      const newTodo = { id: prevTodoList?.length ?? 0, content: todo, done: false, date: getSimpleDateFormat(selectedDate) };
-
-      setTodoList({...todoList, [getSimpleDateFormat(selectedDate)]: [...(prevTodoList ? [...prevTodoList, newTodo] : [newTodo])]});
-
+      addTodo();
       reset();
       handleClose();
     }

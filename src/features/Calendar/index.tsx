@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRecoilCallback, useRecoilValue, useSetRecoilState } from 'recoil';
 import { BiChevronLeft, BiChevronRight } from 'react-icons/bi'
 import styled from '@emotion/styled/macro';
 
-import TodoList from '../TodoList';
-import { selectedDateState, selectedTodoState, todoListState, Todo } from '../TodoList/atom';
-import { getSimpleDateFormat } from '../../utils/date';
-import { todoFormModalOpenState } from '../TodoFormModal/atom';
-import { todoStatisticsModalOpenState } from "../TodoStatisticsModal/atom";
+import { selectedDateState, selectedTodoState, todoListState } from '../TodoList/atom';
+import CalendarDay from "./CalendarDay";
 
 const Header = styled.div`
   width: 100%;
@@ -69,22 +66,6 @@ const TableBody = styled.tbody`
   }
 `;
 
-const DisplayDate = styled.div<{ isToday?: boolean; isSelected?: boolean; }>`
-  color: ${({ isToday }) => isToday && '#F8F7FA'};
-  background-color: ${({ isToday, isSelected }) => isSelected ? '#7047EB' : isToday ? '#313133' : ''};
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  align-self: flex-end;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 36px;
-  height: 36px;
-  cursor: pointer;
-`;
-
 const TableData = styled.td`
   text-align: center;
   color: #C9C8CC;
@@ -107,7 +88,6 @@ const Base = styled.div`
   }
 `;
 
-const Container = styled.div``;
 
 const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -116,14 +96,10 @@ const MONTHS = ["January", "February", "March", "April", "May", "June",
 ];
 
 const Calendar: React.FC = () => {
-  const todoList = useRecoilValue(todoListState);
   const selectedDate = useRecoilValue(selectedDateState);
-  const selectedTodo = useRecoilValue(selectedTodoState);
+  const todoList = useRecoilValue(todoListState);
 
   const setSelectedDate = useSetRecoilState(selectedDateState);
-  const setTodoFormModalOpen = useSetRecoilState(todoFormModalOpenState);
-  const setTodoList = useSetRecoilState(todoListState);
-  const setTodoStatisticsModalOpen = useSetRecoilState(todoStatisticsModalOpenState);
 
   const { year, month, date, firstDay, lastDay } = useMemo(() => {
     const year = selectedDate.getFullYear();
@@ -139,54 +115,14 @@ const Calendar: React.FC = () => {
     })
   }, [selectedDate]);
 
-  const isToday = (d: Date) => {
-    const today = new Date();
-
-    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
-  }
-
   const handleGoTo = (d: Date) => {
     setSelectedDate(d);
-  }
-
-  const handleTodoFormModalOpen = (d: number) => {
-    setSelectedDate(new Date(selectedDate.setDate(d)));
-    setTodoFormModalOpen(true);
-  };
-
-  const handleDateSelect = (d: number) => {
-    setSelectedDate(new Date(selectedDate.setDate(d)));
-  }
-
-  const handleTodoStatisticsModalOpen = (event: React.SyntheticEvent<HTMLDivElement>) => {
-    event.stopPropagation();
-
-    setTodoStatisticsModalOpen(true);
   }
 
   const pad = () => [...Array(firstDay.getDay()).keys()].map((p: number) => <TableData key={`pad_${p}`} />);
 
   const range = () => [...Array(lastDay.getDate()).keys()].map((d: number) => (
-    <TableData
-      key={`date_${d}`}
-      align="center"
-      onDoubleClick={() => handleTodoFormModalOpen(d + 1)}
-    >
-      <Container>
-        <DisplayDate
-          isSelected={date === d + 1}
-          isToday={isToday(new Date(year, month, d + 1))}
-          onClick={() => handleDateSelect(d + 1)}
-          onDoubleClick={handleTodoStatisticsModalOpen}
-        >
-          {d + 1}
-        </DisplayDate>
-        <TodoList
-          items={todoList[getSimpleDateFormat(new Date(year, month, d + 1))] || []}
-          date={new Date(year, month, d + 1)}
-        />
-      </Container>
-    </TableData>
+    <CalendarDay key={d} date={new Date(year, month, d + 1)} />
   ));
 
   const renderDays = () => {
@@ -201,16 +137,17 @@ const Calendar: React.FC = () => {
     ));
   }
 
+  const removeTodo = useRecoilCallback(({ snapshot, set }) => () => {
+    const todoList = snapshot.getLoadable(todoListState).getValue();
+    const selectedTodo = snapshot.getLoadable(selectedTodoState).getValue();
+
+    set(todoListState, todoList.filter(todo => todo.id !== selectedTodo?.id));
+  }, [selectedDate, todoList]);
+
   useEffect(() => {
-    const removeTodo = (todo: Todo) => {
-      const nextTodoList = todoList[todo.date].filter(t => t.id !== todo.id);
-
-      setTodoList({...todoList, [todo.date]: nextTodoList})
-    }
-
     const onBackspaceKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Backspace') {
-        selectedTodo && removeTodo(selectedTodo);
+        removeTodo();
       }
     };
 
@@ -219,7 +156,7 @@ const Calendar: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', onBackspaceKeyDown);
     }
-  }, [selectedTodo, todoList, setTodoList]);
+  }, [removeTodo]);
 
   return (
     <Base>
